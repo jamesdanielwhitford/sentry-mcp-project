@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { writeFile, mkdir } from "fs/promises"
-import { join } from "path"
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("Upload endpoint called")
+    
     const session = await getServerSession(authOptions)
+    console.log("Session:", session?.user?.id ? "Valid" : "Invalid")
     
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -27,6 +28,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log("File received:", {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    })
+
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
@@ -36,82 +43,112 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain']
+    const allowedTypes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'application/pdf', 
+      'text/plain',
+      'text/csv'
+    ]
+    
     if (!allowedTypes.includes(file.type)) {
+      console.log("Invalid file type:", file.type)
       return NextResponse.json(
-        { error: "File type not allowed" },
+        { error: `File type ${file.type} not allowed. Allowed types: ${allowedTypes.join(', ')}` },
         { status: 400 }
       )
     }
 
     // Generate unique filename
     const timestamp = Date.now()
-    const fileExtension = file.name.split('.').pop()
+    const fileExtension = file.name.split('.').pop() || 'bin'
     const uniqueFilename = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExtension}`
 
+    console.log("Environment check:", {
+      hasBlob: !!process.env.BLOB_READ_WRITE_TOKEN,
+      nodeEnv: process.env.NODE_ENV
+    })
+
     try {
-      // Check if we're in production and Vercel Blob is available
+      // Always try to use Vercel Blob first if token is available
       if (process.env.BLOB_READ_WRITE_TOKEN) {
-        // Use Vercel Blob in production
-        const { put } = await import('@vercel/blob')
-        const filename = `${session.user.id}/${uniqueFilename}`
+        console.log("Using Vercel Blob storage")
         
-        const blob = await put(filename, file, {
-          access: 'public',
-        })
+        try {
+          const { put } = await import('@vercel/blob')
+          const filename = `uploads/${session.user.id}/${uniqueFilename}`
+          
+          console.log("Uploading to blob:", filename)
+          
+          const blob = await put(filename, file, {
+            access: 'public',
+          })
 
-        // Save file metadata to database
-        const savedFile = await db.file.create({
-          data: {
-            name: blob.pathname.split('/').pop() || uniqueFilename,
-            originalName: file.name,
-            size: file.size,
-            type: file.type,
-            url: blob.url,
-            userId: session.user.id
-          }
-        })
+          console.log("Blob uploaded successfully:", blob.url)
 
-        return NextResponse.json({
-          message: "File uploaded successfully",
-          file: savedFile
-        })
+          // Save file metadata to database
+          console.log("Saving to database...")
+          
+          const savedFile = await db.file.create({
+            data: {
+              name: blob.pathname.split('/').pop() || uniqueFilename,
+              originalName: file.name,
+              size: file.size,
+              type: file.type,
+              url: blob.url,
+              userId: session.user.id
+            }
+          })
+
+          console.log("File saved to database:", savedFile.id)
+
+          return NextResponse.json({
+            message: "File uploaded successfully",
+            file: savedFile
+          })
+          
+        } catch (blobError) {
+          console.error("Vercel Blob error:", blobError)
+          throw new Error(`Blob storage failed: ${blobError instanceof Error ? blobError.message : 'Unknown error'}`)
+        }
+        
       } else {
-        // Use local file storage for development
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = join(process.cwd(), 'public', 'uploads', session.user.id)
-        await mkdir(uploadsDir, { recursive: true })
-
-        // Save file to local storage
-        const filePath = join(uploadsDir, uniqueFilename)
-        await writeFile(filePath, buffer)
-
-        // Create file URL for local storage
-        const fileUrl = `/uploads/${session.user.id}/${uniqueFilename}`
-
-        // Save file metadata to database
-        const savedFile = await db.file.create({
-          data: {
-            name: uniqueFilename,
-            originalName: file.name,
-            size: file.size,
-            type: file.type,
-            url: fileUrl,
-            userId: session.user.id
-          }
-        })
-
-        return NextResponse.json({
-          message: "File uploaded successfully",
-          file: savedFile
-        })
+        // Fallback error - should not happen in production
+        console.error("No blob storage token available")
+        return NextResponse.json(
+          { error: "File storage not configured. BLOB_READ_WRITE_TOKEN environment variable is required." },
+          { status: 500 }
+        )
       }
 
     } catch (uploadError) {
-      console.error("File upload error:", uploadError)
+      console.error("Upload error details:", uploadError)
+      
+      // More specific error handling
+      if (uploadError instanceof Error) {
+        if (uploadError.message.includes('PrismaClient')) {
+          return NextResponse.json(
+            { error: "Database connection failed. Please check your database configuration." },
+            { status: 500 }
+          )
+        }
+        
+        if (uploadError.message.includes('Blob')) {
+          return NextResponse.json(
+            { error: "File storage failed. Please try again or contact support." },
+            { status: 500 }
+          )
+        }
+        
+        return NextResponse.json(
+          { error: `Upload failed: ${uploadError.message}` },
+          { status: 500 }
+        )
+      }
+      
       return NextResponse.json(
         { error: "Failed to upload file" },
         { status: 500 }
@@ -119,9 +156,15 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error("Upload error:", error)
+    console.error("General upload error:", error)
+    
+    // Enhanced error logging
+    if (error instanceof Error) {
+      console.error("Error stack:", error.stack)
+    }
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error. Please check server logs." },
       { status: 500 }
     )
   }
