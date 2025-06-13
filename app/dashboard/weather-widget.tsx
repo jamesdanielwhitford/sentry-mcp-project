@@ -62,6 +62,7 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
   };
 
   // INTENTIONAL ERROR: Another async function that can fail
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processWeatherData = async (data: WeatherData): Promise<any> => {
     // Simulate API call to weather insights service that doesn't exist
     const response = await fetch(`/api/weather/insights?city=${data.city}&temp=${data.temperature}`);
