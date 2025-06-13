@@ -1,7 +1,7 @@
 // app/dashboard/analytics/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   BarChart, 
   Bar, 
@@ -82,35 +82,7 @@ export default function AnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d");
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch files data
-      const response = await fetch("/api/user/files");
-      if (!response.ok) {
-        throw new Error("Failed to fetch files data");
-      }
-      
-      const files: FileUpload[] = await response.json();
-      
-      // Process analytics data
-      const processedData = processFilesData(files);
-      setAnalyticsData(processedData);
-      
-    } catch (error) {
-      console.error("Failed to fetch analytics:", error);
-      setError(error instanceof Error ? error.message : "Failed to load analytics");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const processFilesData = (files: FileUpload[]): AnalyticsData => {
+  const processFilesData = useCallback((files: FileUpload[]): AnalyticsData => {
     const now = new Date();
     const timeRangeDays = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90;
     const startDate = new Date(now.getTime() - timeRangeDays * 24 * 60 * 60 * 1000);
@@ -137,7 +109,7 @@ export default function AnalyticsPage() {
       });
     });
     
-    const colors = {
+    const colors: Record<string, string> = {
       image: "#10B981",
       application: "#EF4444", 
       text: "#3B82F6",
@@ -149,7 +121,7 @@ export default function AnalyticsPage() {
       type: type.charAt(0).toUpperCase() + type.slice(1),
       count: data.count,
       size: data.size,
-      color: colors[type as keyof typeof colors] || "#6B7280"
+      color: colors[type] || "#6B7280"
     }));
     
     // Generate upload timeline data
@@ -164,7 +136,7 @@ export default function AnalyticsPage() {
       uploadsByDate,
       recentActivity: files.slice(0, 5)
     };
-  };
+  }, [timeRange]);
 
   const generateTimelineData = (files: FileUpload[], days: number) => {
     const data = [];
@@ -189,6 +161,34 @@ export default function AnalyticsPage() {
     
     return data;
   };
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch files data
+      const response = await fetch("/api/user/files");
+      if (!response.ok) {
+        throw new Error("Failed to fetch files data");
+      }
+      
+      const files: FileUpload[] = await response.json();
+      
+      // Process analytics data
+      const processedData = processFilesData(files);
+      setAnalyticsData(processedData);
+      
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+      setError(error instanceof Error ? error.message : "Failed to load analytics");
+    } finally {
+      setLoading(false);
+    }
+  }, [processFilesData]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   if (loading) {
     return (

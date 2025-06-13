@@ -4,20 +4,25 @@
 import { useState, useEffect } from "react";
 import { Plus, Grid, List, Filter } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { FileUpload } from "@/types";
 import { FileCard } from "@/components/dashboard/file-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 
+type SortBy = "name" | "date" | "size";
+type FilterType = "all" | "image" | "document";
+type ViewMode = "grid" | "list";
+
 export default function FilesPage() {
   const [files, setFiles] = useState<FileUpload[]>([]);
   const [filteredFiles, setFilteredFiles] = useState<FileUpload[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "date" | "size">("date");
-  const [filterType, setFilterType] = useState<"all" | "image" | "document">("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState<SortBy>("date");
+  const [filterType, setFilterType] = useState<FilterType>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [previewFile, setPreviewFile] = useState<FileUpload | null>(null);
 
   useEffect(() => {
@@ -89,6 +94,14 @@ export default function FilesPage() {
     setPreviewFile(file);
   };
 
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value as SortBy);
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilterType(e.target.value as FilterType);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -134,7 +147,7 @@ export default function FilesPage() {
             <div className="flex gap-2">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={handleSortChange}
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="date">Sort by Date</option>
@@ -144,7 +157,7 @@ export default function FilesPage() {
               
               <select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
+                onChange={handleFilterChange}
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="all">All Files</option>
@@ -221,10 +234,13 @@ export default function FilesPage() {
         >
           <div className="text-center">
             {previewFile.type.startsWith('image/') ? (
-              <img
+              <Image
                 src={previewFile.url}
                 alt={previewFile.originalName}
-                className="max-w-full max-h-96 mx-auto rounded-lg"
+                width={800}
+                height={600}
+                className="max-w-full h-auto mx-auto rounded-lg"
+                style={{ maxHeight: '400px', objectFit: 'contain' }}
               />
             ) : (
               <div className="p-8 text-gray-500">
