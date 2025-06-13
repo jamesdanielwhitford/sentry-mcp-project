@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { unlink } from "fs/promises"
-import path from "path"
+import { del } from '@vercel/blob'
 
 export async function GET() {
   try {
@@ -69,12 +68,12 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete from filesystem
     try {
-      const filepath = path.join(process.cwd(), "public", file.url)
-      await unlink(filepath)
-    } catch (fsError) {
-      console.warn("Could not delete file from filesystem:", fsError)
+      // Delete from Vercel Blob Storage
+      await del(file.url)
+    } catch (blobError) {
+      console.warn("Could not delete file from blob storage:", blobError)
+      // Continue with database deletion even if blob deletion fails
     }
 
     // Delete from database

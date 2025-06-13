@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { put } from '@vercel/blob'
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,35 +43,41 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, we'll store file metadata only (without actual file storage)
-    // In production, you'd want to use cloud storage like AWS S3, Cloudinary, or Vercel Blob
-    
     // Generate unique filename
     const timestamp = Date.now()
     const fileExtension = file.name.split('.').pop()
-    const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExtension}`
-    
-    // For demonstration, we'll create a placeholder URL
-    // In real production, replace this with actual cloud storage upload
-    const fileUrl = `/api/placeholder-file/${filename}`
+    const filename = `${session.user.id}/${timestamp}-${Math.random().toString(36).substring(7)}.${fileExtension}`
 
-    // Save to database
-    const savedFile = await db.file.create({
-      data: {
-        name: filename,
-        originalName: file.name,
-        size: file.size,
-        type: file.type,
-        url: fileUrl,
-        userId: session.user.id
-      }
-    })
+    try {
+      // Upload to Vercel Blob Storage
+      const blob = await put(filename, file, {
+        access: 'public',
+      })
 
-    return NextResponse.json({
-      message: "File uploaded successfully",
-      file: savedFile,
-      note: "This is a demo - file is not actually stored. Implement cloud storage for production."
-    })
+      // Save file metadata to database
+      const savedFile = await db.file.create({
+        data: {
+          name: blob.pathname.split('/').pop() || filename,
+          originalName: file.name,
+          size: file.size,
+          type: file.type,
+          url: blob.url,
+          userId: session.user.id
+        }
+      })
+
+      return NextResponse.json({
+        message: "File uploaded successfully",
+        file: savedFile
+      })
+
+    } catch (uploadError) {
+      console.error("Blob upload error:", uploadError)
+      return NextResponse.json(
+        { error: "Failed to upload file to storage" },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
     console.error("Upload error:", error)

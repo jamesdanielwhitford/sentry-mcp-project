@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@sentry/nextjs": "^9.28.1",
+    "@vercel/blob": "^1.1.1",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.0.0",
     "lucide-react": "^0.263.1",
