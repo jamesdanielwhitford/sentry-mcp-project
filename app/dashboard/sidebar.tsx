@@ -1,4 +1,4 @@
-// components/dashboard/sidebar.tsx
+// app/dashboard/sidebar.tsx
 "use client";
 
 import Link from "next/link";
@@ -28,12 +28,17 @@ export function Sidebar() {
   return (
     <div className="hidden lg:flex lg:flex-shrink-0">
       <div className="flex flex-col w-64">
-        <div className="flex flex-col h-0 flex-1 bg-white border-r border-gray-200">
-          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-4">
-              <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex flex-col h-0 flex-1 bg-card border-r border-border">
+          <div className="flex-1 flex flex-col pt-6 pb-4 overflow-y-auto">
+            <div className="flex items-center flex-shrink-0 px-6 mb-8">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <h1 className="text-xl font-bold text-card-foreground">Dashboard</h1>
+              </div>
             </div>
-            <nav className="mt-5 flex-1 px-2 space-y-1">
+            <nav className="mt-2 flex-1 px-4 space-y-2">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -41,18 +46,18 @@ export function Sidebar() {
                     key={item.name}
                     href={item.href}
                     className={cn(
+                      "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                       isActive
-                        ? "bg-indigo-100 text-indigo-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                      "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     )}
                   >
                     <item.icon
                       className={cn(
+                        "mr-3 flex-shrink-0 h-5 w-5 transition-colors",
                         isActive
-                          ? "text-indigo-500"
-                          : "text-gray-400 group-hover:text-gray-500",
-                        "mr-3 flex-shrink-0 h-5 w-5"
+                          ? "text-primary-foreground"
+                          : "text-muted-foreground group-hover:text-accent-foreground"
                       )}
                       aria-hidden="true"
                     />
@@ -61,6 +66,15 @@ export function Sidebar() {
                 );
               })}
             </nav>
+          </div>
+          <div className="flex-shrink-0 p-4">
+            <div className="bg-muted rounded-lg p-4">
+              <h4 className="text-sm font-medium text-card-foreground mb-2">Storage Usage</h4>
+              <div className="w-full bg-background rounded-full h-2">
+                <div className="bg-primary h-2 rounded-full" style={{ width: '45%' }}></div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">4.5 GB of 10 GB used</p>
+            </div>
           </div>
         </div>
       </div>

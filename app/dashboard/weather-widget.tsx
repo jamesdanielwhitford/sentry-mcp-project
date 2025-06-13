@@ -1,8 +1,8 @@
-// components/dashboard/weather-widget.tsx
+// app/dashboard/weather-widget.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import { Cloud, CloudRain, Sun, CloudSnow } from "lucide-react";
+import { Cloud, CloudRain, Sun, CloudSnow, MapPin } from "lucide-react";
 import { WeatherData } from "@/types";
 
 interface WeatherWidgetProps {
@@ -43,15 +43,13 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
 
   if (loading) {
     return (
-      <div className="bg-white overflow-hidden shadow rounded-lg">
+      <div className="bg-card rounded-xl shadow-sm border border-border">
         <div className="p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
-            </div>
-            <div className="ml-4 flex-1">
-              <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
-              <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-muted rounded-xl animate-pulse"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-muted rounded animate-pulse"></div>
+              <div className="h-6 bg-muted rounded animate-pulse w-3/4"></div>
             </div>
           </div>
         </div>
@@ -61,13 +59,15 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
 
   if (error) {
     return (
-      <div className="bg-white overflow-hidden shadow rounded-lg">
+      <div className="bg-card rounded-xl shadow-sm border border-border">
         <div className="p-6">
-          <div className="flex items-center">
-            <Cloud className="h-10 w-10 text-gray-400" />
-            <div className="ml-4">
-              <h3 className="text-lg font-medium text-gray-900">Weather</h3>
-              <p className="text-sm text-red-600">{error}</p>
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
+              <Cloud className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-card-foreground">Weather</h3>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           </div>
         </div>
@@ -80,27 +80,36 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
   const WeatherIcon = getWeatherIcon(weather.icon);
 
   return (
-    <div className="bg-white overflow-hidden shadow rounded-lg">
+    <div className="bg-card rounded-xl shadow-sm border border-border">
       <div className="p-6">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <WeatherIcon className="h-10 w-10 text-blue-500" />
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+            <WeatherIcon className="h-6 w-6 text-white" />
           </div>
-          <div className="ml-4 flex-1">
-            <h3 className="text-lg font-medium text-gray-900">
-              {weather.city}, {weather.country}
-            </h3>
-            <div className="flex items-center space-x-4 mt-2">
-              <span className="text-2xl font-bold text-gray-900">
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold text-card-foreground">
+                {weather.city}, {weather.country}
+              </h3>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-3xl font-bold text-card-foreground">
                 {weather.temperature}°C
               </span>
-              <span className="text-sm text-gray-500 capitalize">
+              <span className="text-sm text-muted-foreground capitalize">
                 {weather.description}
               </span>
             </div>
-            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-              <span>Humidity: {weather.humidity}%</span>
-              <span>Wind: {weather.windSpeed} m/s</span>
+            <div className="flex items-center space-x-4 mt-3 text-sm text-muted-foreground">
+              <div className="flex items-center space-x-1">
+                <span>💧</span>
+                <span>{weather.humidity}%</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span>💨</span>
+                <span>{weather.windSpeed} m/s</span>
+              </div>
             </div>
           </div>
         </div>

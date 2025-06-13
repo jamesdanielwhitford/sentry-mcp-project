@@ -14,12 +14,14 @@
   "dependencies": {
     "@sentry/nextjs": "^9.28.1",
     "bcryptjs": "^2.4.3",
+    "clsx": "^2.0.0",
     "lucide-react": "^0.263.1",
     "next": "15.3.3",
     "next-auth": "^4.24.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "recharts": "^2.13.3"
+    "recharts": "^2.13.3",
+    "tailwind-merge": "^2.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

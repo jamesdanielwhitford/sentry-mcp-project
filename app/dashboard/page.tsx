@@ -44,10 +44,10 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="mt-1 text-sm text-gray-500">
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-foreground">Dashboard Overview</h1>
+        <p className="text-lg text-muted-foreground">
           Welcome back! Here's what's happening with your account.
         </p>
       </div>
@@ -58,11 +58,11 @@ export default async function DashboardPage() {
         joinedDate={user?.createdAt || new Date()}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
           <WeatherWidget location={user?.settings?.weatherLocation || "New York"} />
         </div>
-        <div className="lg:col-span-1">
+        <div className="space-y-6">
           <ActivityChart userId={session.user.id} />
         </div>
       </div>

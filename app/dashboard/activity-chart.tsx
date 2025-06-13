@@ -1,8 +1,9 @@
-// components/dashboard/activity-chart.tsx
+// app/dashboard/activity-chart.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { TrendingUp } from "lucide-react";
 
 interface ActivityData {
   date: string;
@@ -47,32 +48,55 @@ export function ActivityChart({ userId }: ActivityChartProps) {
 
   if (loading) {
     return (
-      <div className="bg-white overflow-hidden shadow rounded-lg">
+      <div className="bg-card rounded-xl shadow-sm border border-border">
         <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Activity Overview</h3>
-          <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-6 h-6 bg-muted rounded animate-pulse"></div>
+            <div className="h-6 bg-muted rounded animate-pulse w-32"></div>
+          </div>
+          <div className="h-64 bg-muted rounded-lg animate-pulse"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white overflow-hidden shadow rounded-lg">
+    <div className="bg-card rounded-xl shadow-sm border border-border">
       <div className="p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Activity Overview</h3>
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center">
+            <TrendingUp className="h-4 w-4 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold text-card-foreground">Activity Overview</h3>
+        </div>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis 
+                dataKey="date" 
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+              />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--card-foreground))'
+                }}
+              />
               <Line 
                 type="monotone" 
                 dataKey="uploads" 
-                stroke="#3B82F6" 
-                strokeWidth={2}
-                dot={{ fill: '#3B82F6' }}
+                stroke="hsl(var(--primary))" 
+                strokeWidth={3}
+                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: 'hsl(var(--primary))', strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
