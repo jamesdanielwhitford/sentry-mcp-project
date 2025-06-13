@@ -18,21 +18,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // BUG: Get the raw request size and enforce a stricter limit than advertised
-    // This creates inconsistent behavior where some files that pass client validation fail on server
-    const contentLength = request.headers.get('content-length')
-    const requestSize = contentLength ? parseInt(contentLength) : 0
-    
-    // BUG: Enforce a 3MB limit server-side while client allows 5MB
-    // This creates the 413 error scenario we want to debug
-    if (requestSize > 3 * 1024 * 1024) {
-      console.log(`Request too large: ${requestSize} bytes (limit: 3MB)`)
-      return NextResponse.json(
-        { error: "Payload too large" },
-        { status: 413 }
-      )
-    }
-
     const formData = await request.formData()
     const file = formData.get("file") as File
     
@@ -49,8 +34,7 @@ export async function POST(request: NextRequest) {
       type: file.type
     })
 
-    // BUG: Keep the original 5MB validation here, but it's misleading since 
-    // we already rejected larger requests above based on raw request size
+    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: "File too large. Maximum size is 5MB" },
