@@ -1,0 +1,52 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  files         File[]
+  settings      UserSettings?
+  
+  @@map("users")
+}
+
+model File {
+  id            String    @id @default(cuid())
+  name          String
+  originalName  String
+  size          Int
+  type          String
+  url           String
+  uploadedAt    DateTime  @default(now())
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("files")
+}
+
+model UserSettings {
+  id                String    @id @default(cuid())
+  theme             String    @default("light")
+  notifications     Boolean   @default(true)
+  weatherLocation   String    @default("New York")
+  dashboardLayout   String    @default("grid")
+  
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_settings")
+}

@@ -1,26 +1,42 @@
 {
-  "name": "sentry-project",
+  "name": "sentry-dashboard-project",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@sentry/nextjs": "^9.28.1",
+    "bcryptjs": "^2.4.3",
+    "lucide-react": "^0.263.1",
     "next": "15.3.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "next-auth": "^4.24.8",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.13.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@prisma/client": "^6.9.0",
+    "@tailwindcss/postcss": "^4.1.10",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
+    "i": "^0.3.7",
+    "npm": "^11.4.2",
+    "postcss": "^8.5.5",
+    "prisma": "^6.9.0",
+    "tailwindcss": "^4.1.10",
     "typescript": "^5"
   }
 }
