@@ -22,7 +22,7 @@ interface FilePreview {
 export function FileUpload({
   onUpload,
   maxFiles = 10,
-  maxSize = 5 * 1024 * 1024, // 5MB default
+  maxSize = 5 * 1024 * 1024, // BUG: Client still allows 5MB while server rejects at 3MB
   accept = "image/*,application/pdf,text/plain",
   disabled = false
 }: FileUploadProps) {
@@ -43,6 +43,8 @@ export function FileUpload({
       return false;
     }
 
+    // BUG: This client-side validation allows 5MB files
+    // but the server will reject them with 413 at 3MB
     if (file.size > maxSize) {
       setErrors(prev => [...prev, `${file.name}: File too large (max ${formatFileSize(maxSize)})`]);
       return false;
@@ -151,7 +153,7 @@ export function FileUpload({
 
       {files.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-medium text-Gray-900">Files to upload ({files.length})</h4>
+          <h4 className="font-medium text-gray-900">Files to upload ({files.length})</h4>
           <div className="space-y-2">
             {files.map(({ file, id }) => {
               const FileIcon = getFileIcon(file.type);

@@ -1,8 +1,36 @@
+// next.config.ts
 import {withSentryConfig} from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  
+  // BUG: Add a small body size limit that will cause 413 errors
+  // This creates additional confusion because the limit applies to the entire request body
+  experimental: {
+    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
+  },
+  
+  // BUG: This will cause 413 errors for larger file uploads
+  // The limit applies to the raw request body, not just the file
+  // Combined with form data overhead, files around 3-4MB will fail
+  serverRuntimeConfig: {
+    maxRequestSize: '4mb'
+  },
+  
+  async headers() {
+    return [
+      {
+        source: '/api/upload',
+        headers: [
+          {
+            key: 'Content-Length-Limit',
+            value: '4194304' // 4MB in bytes
+          }
+        ]
+      }
+    ]
+  }
 };
 
 export default withSentryConfig(nextConfig, {

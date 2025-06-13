@@ -11,6 +11,8 @@ interface UploadResult {
   success: boolean;
   fileName: string;
   message: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error?: any;
 }
 
 export default function UploadPage() {
@@ -42,17 +44,30 @@ export default function UploadPage() {
             message: 'Upload successful'
           };
         } else {
+          // BUG: Display confusing error messages for 413 errors
+          // This will help demonstrate the investigation process
+          let errorMessage = data.error || 'Upload failed';
+          
+          if (response.status === 413) {
+            // Make the error message confusing - don't mention the real 3MB limit
+            errorMessage = 'File upload failed - server error. Please try again.';
+          }
+          
           return {
             success: false,
             fileName: file.name,
-            message: data.error || 'Upload failed'
+            message: errorMessage,
+            error: {
+              status: response.status,
+              originalError: data.error
+            }
           };
         }
       } catch (error) {
         return {
           success: false,
           fileName: file.name,
-          message: 'Network error',
+          message: 'Network error - please check your connection',
           error: error
         };
       }
@@ -88,7 +103,7 @@ export default function UploadPage() {
           <FileUpload
             onUpload={handleUpload}
             maxFiles={10}
-            maxSize={5 * 1024 * 1024}
+            maxSize={5 * 1024 * 1024} // BUG: Still advertises 5MB limit
             accept="image/*,application/pdf,text/plain"
             disabled={uploading}
           />
@@ -148,12 +163,36 @@ export default function UploadPage() {
                     )}
                     <span className="text-sm font-medium text-gray-900">{result.fileName}</span>
                   </div>
-                  <span className={`text-xs ${result.success ? 'text-green-600' : 'text-red-600'}`}>
-                    {result.message}
-                  </span>
+                  <div className="flex flex-col text-right">
+                    <span className={`text-xs ${result.success ? 'text-green-600' : 'text-red-600'}`}>
+                      {result.message}
+                    </span>
+                    {/* BUG: Show additional confusing technical details for debugging */}
+                    {!result.success && result.error && (
+                      <span className="text-xs text-gray-400 mt-1">
+                        Status: {result.error.status || 'Unknown'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
+            
+            {/* BUG: Add a confusing help text that doesn't help users understand the real issue */}
+            {errorCount > 0 && (
+              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 mt-0.5" />
+                  <div className="text-sm text-yellow-800">
+                    <p className="font-medium mb-1">Having trouble with uploads?</p>
+                    <p>Some files may fail due to server limitations. Try uploading smaller files or contact support if the issue persists.</p>
+                    <p className="text-xs mt-2 text-yellow-600">
+                      Note: Files should be under 5MB and in supported formats.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="flex justify-between mt-6">
               <Button
