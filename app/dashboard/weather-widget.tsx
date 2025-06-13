@@ -24,8 +24,6 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
         const data = await response.json();
         setWeather(data);
 
-        // INTENTIONAL ERROR: Unhandled promise for weather insights
-        // This async operation has no error handling and will cause unhandled promise rejections
         fetchWeatherInsights(data);
         
       } catch (err) {
@@ -38,21 +36,15 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
     fetchWeather();
   }, [location]);
 
-  // INTENTIONAL ERROR: Async function that will fail with no error handling
   const fetchWeatherInsights = async (weatherData: WeatherData) => {
-    // Simulate a secondary API call that fails randomly
-    const shouldFail = Math.random() > 0.7; // 30% chance of failure
+    const shouldFail = Math.random() > 0.7;
     
     if (shouldFail) {
-      // This will throw an error in an unhandled promise
       throw new Error(`Weather insights API failed for ${weatherData.city}`);
     }
     
-    // Simulate another problematic async operation
     const insights = await processWeatherData(weatherData);
     
-    // Try to update some non-existent state or DOM element
-    // This will also fail and create unhandled promises
     const element = document.getElementById('weather-insights-panel');
     if (!element) {
       throw new Error('Weather insights panel not found in DOM');
@@ -61,17 +53,12 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
     element.innerHTML = JSON.stringify(insights);
   };
 
-  // INTENTIONAL ERROR: Another async function that can fail
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processWeatherData = async (data: WeatherData): Promise<any> => {
-    // Simulate API call to weather insights service that doesn't exist
     const response = await fetch(`/api/weather/insights?city=${data.city}&temp=${data.temperature}`);
     
-    // This will fail because the endpoint doesn't exist (404)
-    // But we're not handling the error properly
     const insights = await response.json();
     
-    // Additional processing that might fail
     if (data.temperature > 100) {
       throw new Error('Temperature data appears corrupted');
     }

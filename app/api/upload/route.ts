@@ -89,11 +89,8 @@ export async function POST(request: NextRequest) {
 
           console.log("Blob uploaded successfully:", blob.url)
 
-          // INTENTIONAL ERROR: Add problematic database operation that will timeout
-          // This creates a race condition and database lock that causes timeouts
           console.log("Starting database operations...")
           
-          // First, perform a slow query that will hold database connections
           await db.$executeRaw`
             SELECT pg_sleep(15), COUNT(*) 
             FROM files f1 
@@ -128,7 +125,6 @@ export async function POST(request: NextRequest) {
         }
         
       } else {
-        // Fallback error - should not happen in production
         console.error("No blob storage token available")
         return NextResponse.json(
           { error: "File storage not configured. BLOB_READ_WRITE_TOKEN environment variable is required." },
@@ -139,7 +135,6 @@ export async function POST(request: NextRequest) {
     } catch (uploadError) {
       console.error("Upload error details:", uploadError)
       
-      // More specific error handling
       if (uploadError instanceof Error) {
         if (uploadError.message.includes('PrismaClient')) {
           return NextResponse.json(
@@ -170,7 +165,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("General upload error:", error)
     
-    // Enhanced error logging
     if (error instanceof Error) {
       console.error("Error stack:", error.stack)
     }

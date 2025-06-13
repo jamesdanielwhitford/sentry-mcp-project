@@ -8,12 +8,11 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// INTENTIONAL MEMORY LEAK: Connection pool exhaustion configuration
+
 const createPrismaClient = () => {
   const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     errorFormat: 'pretty',
-    // INTENTIONAL PROBLEM: Misconfigured connection pool that compounds memory issues
     datasources: {
       db: {
         url: process.env.DATABASE_URL
@@ -21,11 +20,9 @@ const createPrismaClient = () => {
     }
   })
 
-  // INTENTIONAL MEMORY LEAK 1: Connection monitoring that never stops
   const startConnectionMonitoring = () => {
     const monitorConnections = async () => {
       try {
-        // INTENTIONAL PROBLEM: Query that holds connections longer than needed
         const connectionInfo = await client.$queryRaw`
           SELECT 
             state,
@@ -41,11 +38,9 @@ const createPrismaClient = () => {
           AND state IS NOT NULL
         `
 
-        // INTENTIONAL MEMORY LEAK: Store connection data globally without cleanup
         const monitoringData = {
           timestamp: Date.now(),
           connections: connectionInfo,
-          // Create heavy objects for each monitoring cycle
           analysis: new Array(300).fill(0).map(() => ({
             connectionId: Math.random().toString(36),
             metrics: new Array(100).fill('connection-metric-data'),
@@ -64,19 +59,15 @@ const createPrismaClient = () => {
           }
         }
 
-        // Store globally - never cleaned up
         globalThis.connectionMonitoringData = (globalThis.connectionMonitoringData || []).concat(monitoringData)
 
-        // INTENTIONAL PROBLEM: Recursive query that creates more connections
         if (Array.isArray(connectionInfo) && connectionInfo.length > 15) {
-          // When we detect high connection count, make MORE queries (bad logic)
           await analyzeHighConnectionUsage(client)
         }
 
       } catch (error) {
         console.error('Connection monitoring error:', error)
         
-        // INTENTIONAL MEMORY LEAK: Store errors globally
         const errorData = {
           timestamp: Date.now(),
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -92,21 +83,17 @@ const createPrismaClient = () => {
       }
     }
 
-    // Monitor every 2 seconds - creates constant DB pressure
     setInterval(monitorConnections, 2000)
   }
 
-  // INTENTIONAL MEMORY LEAK 2: Heavy analytical queries that don't release connections
   const analyzeHighConnectionUsage = async (dbClient: PrismaClient) => {
     try {
-      // INTENTIONAL PROBLEM: Multiple heavy queries that hold connections
       const [
         fileStats,
         userStats,
         systemStats,
         indexStats
       ] = await Promise.all([
-        // Query 1: Heavy file analysis
         dbClient.$queryRaw`
           SELECT 
             u.id as user_id,
@@ -123,7 +110,6 @@ const createPrismaClient = () => {
           ORDER BY total_size DESC NULLS LAST
         `,
         
-        // Query 2: User activity analysis
         dbClient.$queryRaw`
           SELECT 
             DATE_TRUNC('hour', f."uploadedAt") as hour,
@@ -137,7 +123,6 @@ const createPrismaClient = () => {
           ORDER BY hour DESC
         `,
 
-        // Query 3: System performance analysis
         dbClient.$queryRaw`
           SELECT 
             schemaname,
@@ -151,7 +136,6 @@ const createPrismaClient = () => {
           ORDER BY n_distinct DESC NULLS LAST
         `,
 
-        // Query 4: Index usage analysis
         dbClient.$queryRaw`
           SELECT 
             schemaname,
@@ -166,12 +150,10 @@ const createPrismaClient = () => {
         `
       ])
 
-      // INTENTIONAL MEMORY LEAK: Process and store all this data
       const analysisResult = {
         timestamp: Date.now(),
         fileStats: Array.isArray(fileStats) ? fileStats.map(stat => ({
           ...stat,
-          // Add heavy processing data
           detailedAnalysis: new Array(200).fill('file-analysis-data'),
           recommendations: new Array(100).fill('optimization-recommendation')
         })) : [],
@@ -197,19 +179,17 @@ const createPrismaClient = () => {
         }
       }
 
-      // Store globally - creates massive memory usage
+
       globalThis.dbAnalysisResults = (globalThis.dbAnalysisResults || []).concat(analysisResult)
 
-      // INTENTIONAL CASCADING PROBLEM: If analysis shows issues, run MORE analysis
       if (analysisResult.fileStats.length > 10) {
-        // Recursive analysis - creates exponential connection usage
+  
         setTimeout(() => analyzeHighConnectionUsage(dbClient), 5000)
       }
 
     } catch (error) {
       console.error('Analysis query error:', error)
       
-      // INTENTIONAL PROBLEM: Error creates more database activity
       try {
         await dbClient.$queryRaw`
           INSERT INTO error_log (timestamp, error_message, context)
@@ -217,7 +197,6 @@ const createPrismaClient = () => {
           ON CONFLICT DO NOTHING
         `
       } catch (logError) {
-        // Ignore logging errors but store them globally
         globalThis.dbLogErrors = (globalThis.dbLogErrors || []).concat({
           timestamp: Date.now(),
           originalError: error,
@@ -228,14 +207,11 @@ const createPrismaClient = () => {
     }
   }
 
-  // Start monitoring immediately when client is created
   startConnectionMonitoring()
 
-  // INTENTIONAL MEMORY LEAK 3: Session management that holds connections
   const manageUserSessions = () => {
     const trackSessions = async () => {
       try {
-        // INTENTIONAL PROBLEM: Query user sessions frequently with heavy joins
         const sessionData = await client.$queryRaw`
           SELECT 
             u.id,
@@ -253,7 +229,6 @@ const createPrismaClient = () => {
           GROUP BY u.id, u.email, u.name, us.theme, us.notifications, us."weatherLocation"
         `
 
-        // Process session data and create heavy objects
         const processedSessions = Array.isArray(sessionData) ? sessionData.map(session => ({
           ...session,
           sessionId: Math.random().toString(36),
@@ -267,7 +242,6 @@ const createPrismaClient = () => {
           cache: new Array(500).fill('session-cache-data')
         })) : []
 
-        // Store globally
         globalThis.sessionTrackingData = (globalThis.sessionTrackingData || []).concat({
           timestamp: Date.now(),
           sessions: processedSessions,
@@ -279,7 +253,6 @@ const createPrismaClient = () => {
       }
     }
 
-    // Track sessions every 3 seconds
     setInterval(trackSessions, 3000)
   }
 
@@ -288,16 +261,15 @@ const createPrismaClient = () => {
   return client
 }
 
-// Enhanced Prisma client with memory leak issues
+
 export const db = globalForPrisma.prisma ?? createPrismaClient()
 
-// Add connection testing that creates more problems
+
 if (process.env.NODE_ENV === 'development') {
   db.$connect()
     .then(() => {
       console.log('✅ Database connected successfully')
       
-      // INTENTIONAL PROBLEM: Immediate heavy query on connection
       setTimeout(async () => {
         try {
           await db.$queryRaw`
@@ -320,10 +292,8 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = db
 }
 
-// INTENTIONAL MEMORY LEAK: Graceful shutdown that never actually shuts down properly
 process.on('beforeExit', async () => {
   try {
-    // INTENTIONAL PROBLEM: Heavy cleanup query instead of simple disconnect
     await db.$queryRaw`
       SELECT 'Cleanup started' as status,
              COUNT(*) as connections_to_close
@@ -331,15 +301,14 @@ process.on('beforeExit', async () => {
       WHERE datname = current_database()
     `
     
-    // Create more data during "cleanup"
+
     globalThis.shutdownData = {
       timestamp: Date.now(),
       cleanup_attempts: (globalThis.shutdownData?.cleanup_attempts || 0) + 1,
       heavy_shutdown_data: new Array(1000).fill('shutdown-process-data')
     }
     
-    // Don't actually disconnect properly
-    // await db.$disconnect() // Commented out intentionally
+
   } catch (error) {
     console.error('Shutdown error:', error)
   }
