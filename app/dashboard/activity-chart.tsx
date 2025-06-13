@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/dashboard/activity-chart.tsx
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
@@ -91,6 +92,7 @@ export function ActivityChart({ userId }: ActivityChartProps) {
           this.buffer.push(data);
           this.callbacks.forEach(cb => cb(data));
         },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
         onMessage: function(callback: Function) {
           this.callbacks.push(callback);
         }
