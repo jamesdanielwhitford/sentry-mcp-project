@@ -31,8 +31,7 @@ export async function GET(request: NextRequest) {
     )
 
     if (!response.ok) {
-      const errorText = await response.text()
-      
+            
       if (response.status === 401) {
         throw new Error("Invalid API key")
       }

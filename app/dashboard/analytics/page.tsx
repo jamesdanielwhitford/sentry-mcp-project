@@ -15,15 +15,11 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Legend
 } from "recharts";
 import { 
-  BarChart3, 
   TrendingUp, 
   HardDrive, 
   Files, 
-  Calendar,
-  Download,
   Upload as UploadIcon
 } from "lucide-react";
 import { formatFileSize, formatDate } from "@/lib/utils";
