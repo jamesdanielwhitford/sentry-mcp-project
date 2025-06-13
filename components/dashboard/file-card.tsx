@@ -2,7 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Download, Trash2, Eye, FileText, Image, File } from "lucide-react";
+import Image from "next/image";
+import { MoreVertical, Download, Trash2, Eye, FileText, Image as ImageIcon, File } from "lucide-react";
 import { FileUpload } from "@/types";
 import { formatFileSize, formatDate } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ui/modal";
@@ -18,9 +19,10 @@ export function FileCard({ file, onDelete, onPreview }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) return Image;
+    if (type.startsWith('image/')) return ImageIcon;
     if (type === 'application/pdf' || type.startsWith('text/')) return FileText;
     return File;
   };
@@ -152,18 +154,18 @@ export function FileCard({ file, onDelete, onPreview }: FileCardProps) {
           </div>
         </div>
         
-        {file.type.startsWith('image/') && onPreview && (
+        {file.type.startsWith('image/') && onPreview && !imageError && (
           <div 
-            className="h-32 bg-muted cursor-pointer hover:bg-muted/80 transition-colors rounded-b-xl overflow-hidden"
+            className="h-32 bg-muted cursor-pointer hover:bg-muted/80 transition-colors rounded-b-xl overflow-hidden relative"
             onClick={handlePreview}
           >
-            <img
+            <Image
               src={file.url}
               alt={file.originalName}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
+              fill
+              className="object-cover"
+              onError={() => setImageError(true)}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           </div>
         )}

@@ -30,7 +30,7 @@ export function FileUpload({
   const [dragActive, setDragActive] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const validateFile = (file: File): boolean => {
+  const validateFile = useCallback((file: File): boolean => {
     const validTypes = accept.split(',').map(type => type.trim());
     const isValidType = validTypes.some(type => {
       if (type === 'image/*') return file.type.startsWith('image/');
@@ -49,7 +49,7 @@ export function FileUpload({
     }
 
     return true;
-  };
+  }, [accept, maxSize]);
 
   const addFiles = useCallback((newFiles: FileList) => {
     setErrors([]);
@@ -71,7 +71,7 @@ export function FileUpload({
     });
 
     setFiles(prev => [...prev, ...validFiles]);
-  }, [files.length, maxFiles, maxSize, accept]);
+  }, [files.length, maxFiles, validateFile]);
 
   const removeFile = (id: string) => {
     setFiles(prev => prev.filter(f => f.id !== id));

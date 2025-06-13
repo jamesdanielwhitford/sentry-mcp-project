@@ -33,7 +33,8 @@ export default async function DashboardPage() {
         originalName: true,
         size: true,
         type: true,
-        uploadedAt: true
+        uploadedAt: true,
+        url: true
       }
     })
   ]);

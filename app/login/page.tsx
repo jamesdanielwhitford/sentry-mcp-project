@@ -38,7 +38,8 @@ export default function LoginPage() {
           router.refresh();
         }
       }
-    } catch (error) {
+    } catch (loginError) {
+      console.error("Login error:", loginError);
       setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -118,7 +119,7 @@ export default function LoginPage() {
               href="/signup"
               className="text-primary hover:text-primary/80 font-medium transition-colors"
             >
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </Link>
           </div>
         </div>
