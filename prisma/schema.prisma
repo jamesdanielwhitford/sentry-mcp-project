@@ -1,11 +1,13 @@
 // prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -25,25 +27,27 @@ model User {
 
 model File {
   id            String    @id @default(cuid())
-  name          String
-  originalName  String
-  size          Int
-  type          String
-  url           String
+  name          String    @db.VarChar(255)
+  originalName  String    @db.VarChar(255)
+  size          Int       @db.Integer
+  type          String    @db.VarChar(100)
+  url           String    @db.Text
   uploadedAt    DateTime  @default(now())
   
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  @@index([userId])
+  @@index([uploadedAt])
   @@map("files")
 }
 
 model UserSettings {
   id                String    @id @default(cuid())
-  theme             String    @default("light")
+  theme             String    @default("light") @db.VarChar(20)
   notifications     Boolean   @default(true)
-  weatherLocation   String    @default("New York")
-  dashboardLayout   String    @default("grid")
+  weatherLocation   String    @default("New York") @db.VarChar(100)
+  dashboardLayout   String    @default("grid") @db.VarChar(20)
   
   userId            String    @unique
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
