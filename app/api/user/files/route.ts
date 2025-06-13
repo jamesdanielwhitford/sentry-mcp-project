@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { del } from '@vercel/blob'
+import { unlink } from "fs/promises"
+import { join } from "path"
 
 export async function GET() {
   try {
@@ -69,11 +70,24 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-      // Delete from Vercel Blob Storage
-      await del(file.url)
-    } catch (blobError) {
-      console.warn("Could not delete file from blob storage:", blobError)
-      // Continue with database deletion even if blob deletion fails
+      // Check if file is stored in Vercel Blob or locally
+      if (file.url.startsWith('https://') && process.env.BLOB_READ_WRITE_TOKEN) {
+        // Delete from Vercel Blob Storage
+        const { del } = await import('@vercel/blob')
+        await del(file.url)
+      } else if (file.url.startsWith('/uploads/')) {
+        // Delete local file
+        const filePath = join(process.cwd(), 'public', file.url)
+        try {
+          await unlink(filePath)
+        } catch (unlinkError) {
+          console.warn("Could not delete local file:", unlinkError)
+          // Continue with database deletion even if file deletion fails
+        }
+      }
+    } catch (storageError) {
+      console.warn("Could not delete file from storage:", storageError)
+      // Continue with database deletion even if storage deletion fails
     }
 
     // Delete from database
