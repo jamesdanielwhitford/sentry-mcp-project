@@ -89,6 +89,18 @@ export async function POST(request: NextRequest) {
 
           console.log("Blob uploaded successfully:", blob.url)
 
+          // INTENTIONAL ERROR: Add problematic database operation that will timeout
+          // This creates a race condition and database lock that causes timeouts
+          console.log("Starting database operations...")
+          
+          // First, perform a slow query that will hold database connections
+          await db.$executeRaw`
+            SELECT pg_sleep(15), COUNT(*) 
+            FROM files f1 
+            CROSS JOIN files f2 
+            WHERE f1.userId = ${session.user.id}
+          `
+
           // Save file metadata to database
           console.log("Saving to database...")
           
