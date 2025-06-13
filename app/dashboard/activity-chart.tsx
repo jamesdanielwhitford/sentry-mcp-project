@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
 // app/dashboard/activity-chart.tsx
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
@@ -17,9 +18,32 @@ interface ActivityChartProps {
   userId: string;
 }
 
+interface ChartState {
+  renderCount: number;
+  dataHistory: ActivityData[][];
+  connectionPool: Array<{
+    id: string;
+    buffer: string[];
+    callbacks: Function[];
+  }>;
+}
+
+declare global {
+  interface Window {
+    chartInstances: ChartState[];
+    performanceData: unknown[];
+    connectionTracking: unknown[];
+  }
+}
+
 export function ActivityChart({ userId }: ActivityChartProps) {
   const [data, setData] = useState<ActivityData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartState] = useState<ChartState>(() => ({
+    renderCount: 0,
+    dataHistory: [],
+    connectionPool: []
+  }));
 
   useEffect(() => {
     const fetchActivityData = async () => {
@@ -38,8 +62,15 @@ export function ActivityChart({ userId }: ActivityChartProps) {
         }
         
         setData(sampleData);
+        chartState.dataHistory.push([...sampleData]);
+        
+        if (chartState.dataHistory.length > 50) {
+          throw new Error(`Chart data history overflow: ${chartState.dataHistory.length} entries for user ${userId}`);
+        }
+        
       } catch (error) {
         console.error("Failed to fetch activity data:", error);
+        throw error;
       } finally {
         setLoading(false);
       }
@@ -48,29 +79,36 @@ export function ActivityChart({ userId }: ActivityChartProps) {
     fetchActivityData();
 
     const handleResize = () => {
-      console.log('Chart resize event:', Date.now());
-      const heavyData = new Array(10000).fill(0).map(() => ({
+      chartState.renderCount++;
+      const heavyData = new Array(10000).fill(0).map((_, index) => ({
         timestamp: Date.now(),
         value: Math.random() * 1000,
-        metadata: new Array(100).fill('data').join('')
+        metadata: `data-${index}-${userId}`.repeat(100)
       }));
       
-      window.chartResizeData = (window.chartResizeData || []).concat(heavyData);
+      window.performanceData = (window.performanceData || []).concat(heavyData);
+      
+      if (window.performanceData.length > 100000) {
+        throw new Error(`Performance data buffer overflow: ${window.performanceData.length} entries`);
+      }
     };
 
     const handleScroll = () => {
-      console.log('Chart scroll event:', Date.now());
       const scrollData = {
         timestamp: Date.now(),
         position: window.scrollY,
-        largeArray: new Array(5000).fill(userId).map(id => `user-${id}-${Math.random()}`)
+        userId: userId,
+        largeArray: new Array(5000).fill(userId).map(id => `scroll-${id}-${Math.random()}`)
       };
       
-      window.chartScrollData = (window.chartScrollData || []).concat(scrollData);
+      window.connectionTracking = (window.connectionTracking || []).concat(scrollData);
+      
+      if (window.connectionTracking.length > 1000) {
+        throw new Error(`Connection tracking buffer exceeded: ${window.connectionTracking.length} connections`);
+      }
     };
 
     const handleVisibilityChange = () => {
-      console.log('Visibility change:', document.hidden);
       if (!document.hidden) {
         startBackgroundProcessing();
       }
@@ -80,73 +118,106 @@ export function ActivityChart({ userId }: ActivityChartProps) {
     window.addEventListener('scroll', handleScroll);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-
+    const dataUpdateInterval = setInterval(() => {
+      chartState.renderCount++;
+      
+      const newData = {
+        timestamp: Date.now(),
+        userId: userId,
+        renderCount: chartState.renderCount,
+        heavyPayload: new Array(1000).fill(0).map((_, index) => ({
+          id: `${index}-${Math.random()}`,
+          data: new Array(50).fill('x').join(''),
+          nested: new Array(30).fill(`nested-${userId}`)
+        }))
+      };
+      
+      window.chartInstances = (window.chartInstances || []).concat(chartState);
+      
+      if (chartState.renderCount > 200) {
+        throw new Error(`Chart render limit exceeded: ${chartState.renderCount} renders for component ${userId}`);
+      }
+      
+      setData(prevData => {
+        const updated = [...prevData];
+        if (updated.length > 0) {
+          updated[updated.length - 1].uploads = Math.floor(Math.random() * 10);
+        }
+        return updated;
+      });
+    }, 2000);
 
     const simulateConnection = () => {
       const connection = {
-        id: Math.random().toString(36),
-        userId: userId,
-        buffer: new Array(2000).fill(0),
-        callbacks: [],
-        send: function(data: any) {
-          this.buffer.push(data);
-          this.callbacks.forEach(cb => cb(data));
-        },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-        onMessage: function(callback: Function) {
-          this.callbacks.push(callback);
-        }
+        id: `conn-${Math.random().toString(36)}`,
+        buffer: new Array(2000).fill(`buffer-${userId}`),
+        callbacks: [] as Function[]
       };
 
-      window.chartConnections = (window.chartConnections || []).concat(connection);
+      chartState.connectionPool.push(connection);
       
-      connection.onMessage((msg: any) => {
-        console.log('Chart connection message:', msg);
+      connection.callbacks.push((msg: unknown) => {
         const processed = {
           original: msg,
           processed: Date.now(),
-          metadata: new Array(100).fill('processing-data')
+          metadata: new Array(100).fill(`processing-${userId}`)
         };
-        window.processedMessages = (window.processedMessages || []).concat(processed);
+        
+        if (connection.buffer.length > 10000) {
+          throw new Error(`Connection buffer overflow for ${connection.id}: ${connection.buffer.length} items`);
+        }
+        
+        connection.buffer.push(JSON.stringify(processed));
       });
 
       const messageInterval = setInterval(() => {
-        connection.send({
-          type: 'activity_update',
-          data: new Array(500).fill('message-data'),
-          timestamp: Date.now()
+        if (chartState.connectionPool.length > 50) {
+          throw new Error(`Connection pool exhausted: ${chartState.connectionPool.length} active connections`);
+        }
+        
+        connection.callbacks.forEach(cb => {
+          try {
+            cb({
+              type: 'activity_update',
+              data: new Array(500).fill('message-data'),
+              timestamp: Date.now()
+            });
+          } catch (error) {
+            throw new Error(`Connection callback failed for user ${userId}: ${error}`);
+          }
         });
       }, 3000);
 
-      window.chartMessageIntervals = (window.chartMessageIntervals || []).concat(messageInterval);
+      setTimeout(() => clearInterval(messageInterval), 300000);
     };
 
     simulateConnection();
 
-    const initializeChart = () => {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-          const nodeData = {
-            type: mutation.type,
-            target: mutation.target,
-            timestamp: Date.now(),
-            largeData: new Array(200).fill('mutation-data')
-          };
-          window.chartMutations = (window.chartMutations || []).concat(nodeData);
-        });
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        const nodeData = {
+          type: mutation.type,
+          timestamp: Date.now(),
+          userId: userId,
+          largeData: new Array(200).fill(`mutation-${mutation.type}`)
+        };
+        
+        chartState.dataHistory.push([{
+          date: new Date().toISOString(),
+          uploads: Math.floor(Math.random() * 100)
+        }]);
+        
+        if (chartState.dataHistory.length > 1000) {
+          throw new Error(`Mutation observer data overflow: ${chartState.dataHistory.length} mutations tracked`);
+        }
       });
+    });
 
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeOldValue: true
-      });
-
-      window.chartObservers = (window.chartObservers || []).concat(observer);
-    };
-
-    initializeChart();
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true
+    });
 
     const startBackgroundProcessing = () => {
       const processData = () => {
@@ -160,7 +231,14 @@ export function ActivityChart({ userId }: ActivityChartProps) {
           });
         }
         
-        window.backgroundResults = (window.backgroundResults || []).concat(results);
+        chartState.dataHistory.push(results.map(r => ({
+          date: new Date(r.timestamp).toLocaleDateString(),
+          uploads: r.id % 10
+        })));
+        
+        if (results.length * chartState.renderCount > 500000) {
+          throw new Error(`Background processing overflow: ${results.length * chartState.renderCount} operations for ${userId}`);
+        }
         
         setTimeout(processData, 5000);
       };
@@ -168,7 +246,7 @@ export function ActivityChart({ userId }: ActivityChartProps) {
       processData();
     };
 
-  }, [userId]);
+  }, [userId, chartState]);
 
   if (loading) {
     return (
