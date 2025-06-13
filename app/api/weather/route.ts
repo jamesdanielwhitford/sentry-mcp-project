@@ -26,23 +26,36 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`,
+      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`,
       { next: { revalidate: 300 } } // Cache for 5 minutes
     )
 
     if (!response.ok) {
+      const errorText = await response.text()
+      
+      if (response.status === 401) {
+        throw new Error("Invalid API key")
+      }
+      if (response.status === 404) {
+        throw new Error(`City '${city}' not found`)
+      }
+      
       throw new Error(`Weather API error: ${response.status}`)
     }
 
     const data = await response.json()
     
+    if (!data.main || !data.weather || !data.weather[0]) {
+      throw new Error("Invalid API response structure")
+    }
+    
     return NextResponse.json({
       city: data.name,
-      country: data.sys.country,
+      country: data.sys?.country || "Unknown",
       temperature: Math.round(data.main.temp),
       description: data.weather[0].description,
       humidity: data.main.humidity,
-      windSpeed: data.wind.speed,
+      windSpeed: data.wind?.speed || 0,
       icon: data.weather[0].icon
     })
 
