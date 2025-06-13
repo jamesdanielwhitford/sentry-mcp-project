@@ -52,7 +52,8 @@ export default function UploadPage() {
         return {
           success: false,
           fileName: file.name,
-          message: 'Network error'
+          message: 'Network error',
+          error: error
         };
       }
     });

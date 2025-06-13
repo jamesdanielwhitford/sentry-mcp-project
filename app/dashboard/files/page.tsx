@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Plus, Grid, List, Filter } from "lucide-react";
+import { Plus, Grid, List, Filter } from "lucide-react";
 import Link from "next/link";
 import { FileUpload } from "@/types";
 import { FileCard } from "@/components/dashboard/file-card";

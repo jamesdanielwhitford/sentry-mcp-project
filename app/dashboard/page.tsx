@@ -48,7 +48,7 @@ export default async function DashboardPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-foreground">Dashboard Overview</h1>
         <p className="text-lg text-muted-foreground">
-          Welcome back! Here's what's happening with your account.
+          Welcome back! Here&apos;s what&apos;s happening with your account.
         </p>
       </div>
 

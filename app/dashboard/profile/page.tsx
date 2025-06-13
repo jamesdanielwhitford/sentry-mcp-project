@@ -3,14 +3,14 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { User, Mail, Calendar, Files, HardDrive, Save } from "lucide-react";
+import { User, Calendar, Files, HardDrive, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatFileSize, formatDate } from "@/lib/utils";
 import { UserProfile } from "@/types";
 
 export default function ProfilePage() {
-  const { data: session, update } = useSession();
+  const { update } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
