@@ -56,14 +56,20 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processWeatherData = async (data: WeatherData): Promise<any> => {
     const response = await fetch(`/api/weather/insights?city=${data.city}&temp=${data.temperature}`);
-    
-    const insights = await response.json();
-    
-    if (data.temperature > 100) {
-      throw new Error('Temperature data appears corrupted');
+    if (!response.ok) {
+      console.error(`Weather insights API error: ${response.status} ${response.statusText}`);
+      return null;
     }
-    
-    return insights;
+    try {
+      const insights = await response.json();
+      if (data.temperature > 100) {
+        throw new Error('Temperature data appears corrupted');
+      }
+      return insights;
+    } catch (err) {
+      console.error("Failed to parse weather API response as JSON:", err);
+      return null;
+    }
   };
 
   const getWeatherIcon = (icon: string) => {
