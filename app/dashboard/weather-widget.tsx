@@ -37,19 +37,11 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
   }, [location]);
 
   const fetchWeatherInsights = async (weatherData: WeatherData) => {
-    const shouldFail = Math.random() > 0.7;
-    
-    if (shouldFail) {
-      throw new Error(`Weather insights API failed for ${weatherData.city}`);
-    }
-    
     const insights = await processWeatherData(weatherData);
-    
     const element = document.getElementById('weather-insights-panel');
     if (!element) {
       throw new Error('Weather insights panel not found in DOM');
     }
-    
     element.innerHTML = JSON.stringify(insights);
   };
 
