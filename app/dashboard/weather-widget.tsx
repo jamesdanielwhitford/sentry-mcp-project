@@ -47,20 +47,29 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processWeatherData = async (data: WeatherData): Promise<any> => {
-    const response = await fetch(`/api/weather/insights?city=${data.city}&temp=${data.temperature}`);
-    if (!response.ok) {
-      console.error(`Weather insights API error: ${response.status} ${response.statusText}`);
-      return null;
-    }
+    const response = await fetch(`/api/weather/insights?city=${data.city}&temp=${data.temperature}`);    
+    // User-friendly error handling for invalid JSON
+    let insights;
     try {
-      const insights = await response.json();
-      if (data.temperature > 100) {
-        throw new Error('Temperature data appears corrupted');
+      const contentType = response.headers.get("content-type");
+      if (!response.ok) {
+        throw new Error(`Weather insights API error: ${response.status} ${response.statusText}`);
       }
-      return insights;
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(`Weather insights API did not return JSON. Response: ${text.slice(0, 100)}`);
+      }
+      insights = await response.json();
     } catch (err) {
-      console.error("Failed to parse weather API response as JSON:", err);
-      return null;
+      throw new Error(
+        err instanceof Error
+          ? `Could not process weather insights: ${err.message}`
+          : "Could not process weather insights due to an unknown error."
+      );
+    }
+    
+    if (data.temperature > 100) {
+      throw new Error('Temperature data appears corrupted');
     }
   };
 
