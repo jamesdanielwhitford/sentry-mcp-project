@@ -37,26 +37,17 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
   }, [location]);
 
   const fetchWeatherInsights = async (weatherData: WeatherData) => {
-    const shouldFail = Math.random() > 0.7;
-    
-    if (shouldFail) {
-      throw new Error(`Weather insights API failed for ${weatherData.city}`);
-    }
-    
     const insights = await processWeatherData(weatherData);
-    
     const element = document.getElementById('weather-insights-panel');
     if (!element) {
       throw new Error('Weather insights panel not found in DOM');
     }
-    
     element.innerHTML = JSON.stringify(insights);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processWeatherData = async (data: WeatherData): Promise<any> => {
-    const response = await fetch(`/api/weather/insights?city=${data.city}&temp=${data.temperature}`);
-    
+    const response = await fetch(`/api/weather/insights?city=${data.city}&temp=${data.temperature}`);    
     // User-friendly error handling for invalid JSON
     let insights;
     try {
@@ -80,8 +71,6 @@ export function WeatherWidget({ location }: WeatherWidgetProps) {
     if (data.temperature > 100) {
       throw new Error('Temperature data appears corrupted');
     }
-    
-    return insights;
   };
 
   const getWeatherIcon = (icon: string) => {
